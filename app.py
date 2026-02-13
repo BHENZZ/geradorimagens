@@ -6,8 +6,6 @@ Usando Google Gemini API corretamente
 
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_cors import CORS
-from google import genai
-from google.genai import types
 import os
 import base64
 from datetime import datetime
@@ -20,8 +18,24 @@ CORS(app)
 # Configurar API Key
 API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyCU8tdR0ikIEu9qWZftd6LCPjk5jBn-iLQ")
 
-# Criar cliente GenAI
-client = genai.Client(api_key=API_KEY)
+# Importar Google GenAI após configurar variáveis
+try:
+    import google.genai as genai
+    from google.genai import types
+    client = genai.Client(api_key=API_KEY)
+    GENAI_AVAILABLE = True
+except ImportError as e:
+    print(f"Erro ao importar google.genai: {e}")
+    print("Tentando importação alternativa...")
+    try:
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=API_KEY)
+        GENAI_AVAILABLE = True
+    except ImportError:
+        print("Google GenAI não disponível. Instalando...")
+        GENAI_AVAILABLE = False
+        client = None
 
 # Criar pastas
 OUTPUT_FOLDER = "static/imagens_geradas"
@@ -37,6 +51,14 @@ def index():
 @app.route('/gerar', methods=['POST'])
 def gerar_imagem():
     """Endpoint para gerar imagem com produto"""
+    
+    # Verificar se GenAI está disponível
+    if not GENAI_AVAILABLE or client is None:
+        return jsonify({
+            'sucesso': False,
+            'erro': 'Google GenAI não está disponível. Verifique se a biblioteca está instalada corretamente.'
+        }), 500
+    
     try:
         # Pegar dados do formulário
         ficha_tecnica = request.form.get('ficha_tecnica', '')
