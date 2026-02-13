@@ -18,8 +18,8 @@ from prompts_6_imagens import get_prompts_config
 app = Flask(__name__)
 CORS(app)
 
-# Configurar API Key
-API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyCU8tdR0lKlEu9qWZftd6LCPjk5jBn-iLQ")
+# Configurar API Key (CORRETA)
+API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyCU8tdR0ikIEu9qWZftd6LCPjk5jBn-iLQ")
 client = genai.Client(api_key=API_KEY)
 
 # Criar pastas
@@ -36,26 +36,68 @@ def index():
 @app.route('/gerar', methods=['POST'])
 def gerar_imagem():
     """Endpoint para gerar 6 imagens diferentes do produto"""
+    print("\n" + "="*50)
+    print("🎨 INICIANDO GERAÇÃO DE IMAGENS")
+    print("="*50)
+    
     try:
         # Validar API Key
+        print(f"🔑 Verificando API Key...")
+        print(f"API Key configurada: {bool(API_KEY)}")
+        print(f"API Key primeiros caracteres: {API_KEY[:20] if API_KEY else 'NENHUMA'}...")
+        
         if not API_KEY or API_KEY == "":
+            print("❌ API Key não configurada!")
             return jsonify({
                 'sucesso': False,
                 'erro': 'API Key não configurada. Configure GOOGLE_API_KEY no Render.'
             }), 500
         
         # Pegar dados do formulário
+        print(f"\n📋 Coletando dados do formulário...")
         ficha_tecnica = request.form.get('ficha_tecnica', '')
         cor_icones = request.form.get('cor_icones', '#2563EB')
         cor_fonte = request.form.get('cor_fonte', '#1E293B')
         cor_destaque = request.form.get('cor_destaque', '#8B5CF6')
         fonte_escolhida = request.form.get('fonte', 'Inter')
         
+        print(f"Ficha técnica: {len(ficha_tecnica)} caracteres")
+        print(f"Cores: {cor_icones}, {cor_fonte}, {cor_destaque}")
+        print(f"Fonte: {fonte_escolhida}")
+        
+        # Verificar se tem imagem do produto
+        imagem_produto_base64 = None
+        if 'imagem_produto' in request.files:
+            file = request.files['imagem_produto']
+            if file and file.filename:
+                print(f"📸 Imagem do produto recebida: {file.filename}")
+                import base64
+                from io import BytesIO
+                
+                # Converter para base64
+                img_bytes = file.read()
+                imagem_produto_base64 = base64.b64encode(img_bytes).decode('utf-8')
+                print(f"✅ Imagem convertida para base64: {len(imagem_produto_base64)} chars")
+        
         if not ficha_tecnica:
+            print("❌ Ficha técnica vazia!")
             return jsonify({
                 'sucesso': False,
                 'erro': 'Ficha técnica é obrigatória'
             }), 400
+        
+        print(f"\n🔧 Inicializando cliente Gemini...")
+        try:
+            # Testar se o cliente funciona
+            print(f"📡 Testando conexão com API...")
+            test_response = client.models.list()
+            print(f"✅ Cliente Gemini inicializado com sucesso!")
+        except Exception as client_error:
+            print(f"❌ Erro ao inicializar cliente: {str(client_error)}")
+            return jsonify({
+                'sucesso': False,
+                'erro': f'Erro ao conectar com Gemini API: {str(client_error)}'
+            }), 500
         
         # Timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -81,12 +123,13 @@ def gerar_imagem():
             fonte_escolhida
         )
         
-        # Gerar as 6 imagens
+        # Gerar as 6 imagens UMA POR VEZ (para não estourar memória)
         imagens_urls = []
         
         for i, config in enumerate(prompts_config):
             try:
                 print(f"⏳ Gerando imagem {i+1}/6 - {config['tipo']}...")
+                print(f"📝 Prompt: {config['prompt'][:100]}...")
                 
                 # Chamar API
                 response = client.models.generate_content(
@@ -102,7 +145,8 @@ def gerar_imagem():
                 
                 # Verificar resposta
                 if not response or not response.candidates:
-                    raise Exception("API não retornou candidatos")
+                    print(f"⚠️ API não retornou candidatos para {config['tipo']}")
+                    continue
                 
                 # Extrair imagem
                 image_data = None
@@ -138,10 +182,27 @@ def gerar_imagem():
                 
                 print(f"✅ Imagem {i+1} ({config['tipo']}) concluída!")
                 
+                # IMPORTANTE: Limpar variáveis para liberar memória
+                del response
+                del image_data
+                del img_base64
+                
+                # Force garbage collection
+                import gc
+                gc.collect()
+                
+                print(f"🧹 Memória liberada após imagem {i+1}")
+                
             except Exception as img_error:
                 print(f"❌ Erro na imagem {i+1}: {str(img_error)}")
                 import traceback
                 traceback.print_exc()
+                
+                # Liberar memória mesmo em caso de erro
+                import gc
+                gc.collect()
+                
+                # NÃO usar continue aqui - queremos continuar tentando as próximas
                 continue
         
         if not imagens_urls:
@@ -217,13 +278,79 @@ def download(filename):
 @app.route('/health')
 def health():
     """Verificar se a API está funcionando"""
-    return jsonify({
-        'status': 'online',
-        'api_key_configurada': bool(API_KEY),
-        'modelo': 'gemini-2.5-flash-image (Nano Banana - GRÁTIS)',
-        'limite_diario': '500 imagens/dia',
-        'imagens_por_request': 6
-    })
+    try:
+        # Testar API Key
+        api_key_ok = bool(API_KEY) and len(API_KEY) > 20
+        
+        # Testar conexão com Gemini
+        gemini_ok = False
+        gemini_error = None
+        try:
+            test_response = client.models.list()
+            gemini_ok = True
+        except Exception as e:
+            gemini_error = str(e)
+        
+        return jsonify({
+            'status': 'online' if (api_key_ok and gemini_ok) else 'error',
+            'api_key_configurada': api_key_ok,
+            'api_key_preview': API_KEY[:20] + '...' if API_KEY else 'NENHUMA',
+            'gemini_conectado': gemini_ok,
+            'gemini_error': gemini_error,
+            'modelo': 'gemini-2.5-flash-image (Nano Banana - GRÁTIS)',
+            'limite_diario': '500 imagens/dia',
+            'imagens_por_request': 6
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'erro': str(e)
+        }), 500
+
+@app.route('/test-api')
+def test_api():
+    """Testar geração de uma imagem simples"""
+    try:
+        print("\n🧪 TESTE DE API")
+        print("="*50)
+        
+        # Prompt simples de teste
+        test_prompt = "A simple red circle on white background"
+        
+        print(f"📝 Prompt de teste: {test_prompt}")
+        print(f"🔑 API Key: {API_KEY[:20]}...")
+        
+        # Tentar gerar
+        response = client.models.generate_content(
+            model='gemini-2.5-flash-image',
+            contents=[test_prompt],
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE"],
+                temperature=0.9,
+            )
+        )
+        
+        print(f"✅ Response recebida!")
+        print(f"📊 Candidates: {len(response.candidates) if response.candidates else 0}")
+        
+        if response.candidates:
+            print(f"📦 Parts: {len(response.candidates[0].content.parts)}")
+        
+        return jsonify({
+            'sucesso': True,
+            'mensagem': 'API funcionando! Imagem de teste gerada com sucesso.',
+            'candidates': len(response.candidates) if response.candidates else 0
+        })
+        
+    except Exception as e:
+        print(f"❌ Erro no teste: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return jsonify({
+            'sucesso': False,
+            'erro': str(e)
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
