@@ -3,78 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎨 Gerador de Imagens AI - Google Gemini</title>
+    <title>🎨 Gerador de Imagens de Produtos - AI</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎨 Gerador de Imagens AI</h1>
-            <p class="subtitle">Powered by Google Gemini Imagen 3</p>
+            <h1>🎨 Gerador de Imagens de Produtos</h1>
+            <p class="subtitle">Powered by Google Gemini + Imagen 3</p>
         </header>
 
         <main>
             <!-- Formulário de Geração -->
             <section class="generator-section">
                 <div class="form-card">
-                    <h2>Criar Nova Imagem</h2>
+                    <h2>Criar Imagens do Produto</h2>
                     
-                    <div class="form-group">
-                        <label for="prompt">Descreva a imagem que deseja gerar:</label>
-                        <textarea 
-                            id="prompt" 
-                            rows="4" 
-                            placeholder="Ex: um gato astronauta flutuando no espaço, arte digital detalhada, cores vibrantes, 8k"
-                        ></textarea>
-                        <small>Seja específico e detalhado para melhores resultados!</small>
-                    </div>
-
-                    <div class="form-row">
+                    <form id="formGerar" enctype="multipart/form-data">
+                        <!-- Upload Imagem do Produto -->
                         <div class="form-group">
-                            <label for="num_imagens">Número de Imagens:</label>
-                            <select id="num_imagens">
-                                <option value="1" selected>1 imagem</option>
-                                <option value="2">2 imagens</option>
-                                <option value="3">3 imagens</option>
-                                <option value="4">4 imagens</option>
-                            </select>
+                            <label for="imagem_produto">📸 Imagem do Produto: *</label>
+                            <div class="upload-area" id="uploadAreaProduto">
+                                <input type="file" id="imagem_produto" name="imagem_produto" accept="image/*" required>
+                                <div class="upload-placeholder">
+                                    <span class="upload-icon">📁</span>
+                                    <p>Clique ou arraste a imagem do produto aqui</p>
+                                    <small>PNG, JPG ou JPEG</small>
+                                </div>
+                                <img id="previewProduto" class="image-preview" style="display: none;">
+                            </div>
                         </div>
 
+                        <!-- Upload Template (Opcional) -->
                         <div class="form-group">
-                            <label for="aspect_ratio">Proporção:</label>
-                            <select id="aspect_ratio">
-                                <option value="1:1" selected>Quadrado (1:1)</option>
-                                <option value="16:9">Paisagem (16:9)</option>
-                                <option value="9:16">Retrato (9:16)</option>
-                                <option value="4:3">4:3</option>
-                                <option value="3:4">3:4</option>
-                            </select>
+                            <label for="template">🎨 Template (Opcional):</label>
+                            <div class="upload-area" id="uploadAreaTemplate">
+                                <input type="file" id="template" name="template" accept="image/*">
+                                <div class="upload-placeholder">
+                                    <span class="upload-icon">📁</span>
+                                    <p>Clique ou arraste o template aqui</p>
+                                    <small>PNG, JPG ou JPEG (Opcional)</small>
+                                </div>
+                                <img id="previewTemplate" class="image-preview" style="display: none;">
+                            </div>
                         </div>
-                    </div>
 
-                    <button id="btnGerar" class="btn-primary">
-                        <span class="btn-text">✨ Gerar Imagem</span>
-                        <span class="btn-loading" style="display: none;">⏳ Gerando...</span>
-                    </button>
+                        <!-- Ficha Técnica -->
+                        <div class="form-group">
+                            <label for="ficha_tecnica">📋 Ficha Técnica do Produto: *</label>
+                            <textarea 
+                                id="ficha_tecnica" 
+                                name="ficha_tecnica"
+                                rows="6" 
+                                placeholder="Exemplo:
+Modelo: Hydro Mate 1L
+Especificações:
+- Possui trava de abertura
+- Vedação em Silicone
+- Material: Aço inoxidável
+- Capacidade: 1 litro
+- Mantém bebidas quentes por 12h e frias por 24h"
+                                required
+                            ></textarea>
+                            <small>Digite as especificações e características do produto</small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="num_imagens">Número de Imagens:</label>
+                                <select id="num_imagens" name="num_imagens">
+                                    <option value="1">1 imagem</option>
+                                    <option value="2">2 imagens</option>
+                                    <option value="3">3 imagens</option>
+                                    <option value="4" selected>4 imagens</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="aspect_ratio">Proporção:</label>
+                                <select id="aspect_ratio" name="aspect_ratio">
+                                    <option value="1:1" selected>Quadrado (1:1)</option>
+                                    <option value="16:9">Paisagem (16:9)</option>
+                                    <option value="9:16">Retrato (9:16)</option>
+                                    <option value="4:3">4:3</option>
+                                    <option value="3:4">3:4</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btnGerar" class="btn-primary">
+                            <span class="btn-text">✨ Gerar Imagens</span>
+                            <span class="btn-loading" style="display: none;">⏳ Gerando...</span>
+                        </button>
+                    </form>
                 </div>
 
-                <!-- Exemplos de Prompts -->
-                <div class="examples-card">
-                    <h3>💡 Exemplos de Prompts:</h3>
-                    <div class="examples-grid">
-                        <button class="example-btn" data-prompt="um dragão majestoso voando sobre montanhas nevadas ao amanhecer, raios de sol, arte digital épica, 8k">
-                            🐉 Dragão Épico
-                        </button>
-                        <button class="example-btn" data-prompt="paisagem cyberpunk futurista, neon roxo e azul, chuva, reflexos, estilo blade runner">
-                            🌃 Cidade Cyberpunk
-                        </button>
-                        <button class="example-btn" data-prompt="retrato de mulher elegante com vestido vermelho, iluminação cinematográfica, fotografia profissional">
-                            👗 Retrato Elegante
-                        </button>
-                        <button class="example-btn" data-prompt="floresta encantada com cogumelos bioluminescentes, fadas, névoa mágica, noite estrelada">
-                            🍄 Floresta Mágica
-                        </button>
-                    </div>
+                <!-- Informações -->
+                <div class="info-card">
+                    <h3>ℹ️ Como Funciona:</h3>
+                    <ol>
+                        <li>📸 Faça upload da <strong>imagem do produto</strong></li>
+                        <li>🎨 (Opcional) Envie um <strong>template</strong> de referência</li>
+                        <li>📋 Preencha a <strong>ficha técnica</strong> com as informações</li>
+                        <li>✨ Clique em <strong>Gerar Imagens</strong></li>
+                        <li>⏳ Aguarde 30-60 segundos</li>
+                        <li>💾 Baixe suas imagens profissionais!</li>
+                    </ol>
                 </div>
             </section>
 
@@ -97,12 +131,12 @@
         </main>
 
         <footer>
-            <p>Desenvolvido com ❤️ usando Google Gemini Imagen API</p>
+            <p>Desenvolvido com ❤️ usando Google Gemini + Imagen API</p>
             <p><small>As imagens são geradas por IA e podem conter imperfeições</small></p>
         </footer>
     </div>
 
-    <!-- Modal para visualização ampliada -->
+    <!-- Modal -->
     <div id="imageModal" class="modal">
         <span class="modal-close">&times;</span>
         <img class="modal-content" id="modalImage">
