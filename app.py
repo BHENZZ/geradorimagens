@@ -37,6 +37,13 @@ def index():
 def gerar_imagem():
     """Endpoint para gerar 6 imagens diferentes do produto"""
     try:
+        # Validar API Key
+        if not API_KEY or API_KEY == "":
+            return jsonify({
+                'sucesso': False,
+                'erro': 'API Key não configurada. Configure GOOGLE_API_KEY no Render.'
+            }), 500
+        
         # Pegar dados do formulário
         ficha_tecnica = request.form.get('ficha_tecnica', '')
         cor_icones = request.form.get('cor_icones', '#2563EB')
@@ -45,7 +52,10 @@ def gerar_imagem():
         fonte_escolhida = request.form.get('fonte', 'Inter')
         
         if not ficha_tecnica:
-            return jsonify({'erro': 'Ficha técnica é obrigatória'}), 400
+            return jsonify({
+                'sucesso': False,
+                'erro': 'Ficha técnica é obrigatória'
+            }), 400
         
         # Timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
