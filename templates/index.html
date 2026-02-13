@@ -3,190 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎨 Gerador de Imagens para Marketplaces - AI</title>
+    <title>✨ MeliXpress AI - Gerador de Imagens para Marketplaces</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🎨 Gerador de Imagens para Marketplaces</h1>
-            <p class="subtitle">Crie imagens profissionais que convertem | Powered by Google Gemini + Imagen 3</p>
+        <!-- Header -->
+        <header class="header">
+            <h1 class="logo">✨ MeliXpress AI</h1>
+            <p class="subtitle">Gerador Profissional de Imagens para Marketplaces com IA</p>
         </header>
 
-        <main>
-            <!-- Formulário de Geração -->
-            <section class="generator-section">
-                <div class="form-card">
-                    <h2>Criar Imagens do Produto</h2>
-                    
-                    <form id="formGerar" enctype="multipart/form-data">
-                        <!-- Upload Imagem do Produto -->
-                        <div class="form-group">
-                            <label for="imagem_produto">📸 Imagem do Produto: *</label>
-                            <div class="upload-area" id="uploadAreaProduto">
-                                <input type="file" id="imagem_produto" name="imagem_produto" accept="image/*" required>
-                                <div class="upload-placeholder">
-                                    <span class="upload-icon">📁</span>
-                                    <p>Clique ou arraste a imagem do produto aqui</p>
-                                    <small>PNG, JPG ou JPEG</small>
-                                </div>
-                                <img id="previewProduto" class="image-preview" style="display: none;">
-                            </div>
-                        </div>
+        <!-- Main Grid Layout -->
+        <div class="main-grid">
+            <!-- Formulário -->
+            <div class="card">
+                <h2 class="card-title">Criar Imagens do Produto</h2>
+                
+                <form id="formGerar">
+                    <!-- Ficha Técnica -->
+                    <div class="form-group">
+                        <label for="ficha_tecnica">📋 Ficha Técnica do Produto *</label>
+                        <textarea 
+                            id="ficha_tecnica" 
+                            name="ficha_tecnica"
+                            rows="8" 
+                            placeholder="Nome do Produto (primeira linha)
+✓ Benefício 1
+✓ Benefício 2
+✓ Benefício 3
+✓ Benefício 4
+✓ Benefício 5
 
-                        <!-- Upload Template (Opcional) -->
-                        <div class="form-group">
-                            <label for="template">🎨 Template (Opcional):</label>
-                            <div class="upload-area" id="uploadAreaTemplate">
-                                <input type="file" id="template" name="template" accept="image/*">
-                                <div class="upload-placeholder">
-                                    <span class="upload-icon">📁</span>
-                                    <p>Clique ou arraste o template aqui</p>
-                                    <small>PNG, JPG ou JPEG (Opcional)</small>
-                                </div>
-                                <img id="previewTemplate" class="image-preview" style="display: none;">
-                            </div>
-                        </div>
+Exemplo:
+Garrafa Térmica Premium Sport 1L
+✓ Mantém temperatura por 24 horas
+✓ Tampa com trava anti-vazamento
+✓ Aço inoxidável durável
+✓ Design ergonômico confortável
+✓ Livre de BPA"
+                            required
+                        ></textarea>
+                        <small>💡 Use ✓ no início de cada benefício. Primeira linha = Nome do produto</small>
+                    </div>
 
-                        <!-- Ficha Técnica -->
-                        <div class="form-group">
-                            <label for="ficha_tecnica">📋 Ficha Técnica do Produto: *</label>
-                            <textarea 
-                                id="ficha_tecnica" 
-                                name="ficha_tecnica"
-                                rows="6" 
-                                placeholder="Exemplo otimizado para conversão:
-
-Garrafa Térmica Premium 1L
-✓ Mantém 24h gelado / 12h quente
-✓ Tampa com trava de segurança
-✓ Vedação 100% à prova de vazamentos
-✓ Aço inoxidável resistente
-✓ Design moderno ergonômico
-✓ Livre de BPA
-
-Dica: Use ✓ para criar design com ícones!"
-                                required
-                            ></textarea>
-                            <small>💡 Use ✓ para criar design com ícones</small>
-                        </div>
-
-                        <!-- Seletores de Customização Visual -->
-                        <div class="customization-card">
-                            <h3 style="color: var(--white); margin-bottom: 20px;">🎨 Customização Visual</h3>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="fonte">🔤 Fonte:</label>
-                                    <select id="fonte" name="fonte">
-                                        <option value="Inter" selected>Inter (Moderno)</option>
-                                        <option value="Montserrat">Montserrat (Elegante)</option>
-                                        <option value="Poppins">Poppins (Arredondado)</option>
-                                        <option value="Roboto">Roboto (Clean)</option>
-                                        <option value="Helvetica">Helvetica (Clássico)</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="cor_icones">🎯 Cor dos Ícones:</label>
-                                    <div class="color-input-group">
-                                        <input type="color" id="cor_icones" name="cor_icones" value="#2563EB">
-                                        <input type="text" class="color-text" value="#2563EB" readonly>
-                                    </div>
-                                </div>
+                    <!-- Customização Visual -->
+                    <div class="customization-card">
+                        <h3>🎨 Customização Visual</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="fonte">🔤 Fonte</label>
+                                <select id="fonte" name="fonte">
+                                    <option value="Inter" selected>Inter (Moderno)</option>
+                                    <option value="Montserrat">Montserrat (Elegante)</option>
+                                    <option value="Poppins">Poppins (Arredondado)</option>
+                                    <option value="Roboto">Roboto (Clean)</option>
+                                    <option value="Helvetica">Helvetica (Clássico)</option>
+                                </select>
                             </div>
 
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="cor_fonte">✏️ Cor da Fonte:</label>
-                                    <div class="color-input-group">
-                                        <input type="color" id="cor_fonte" name="cor_fonte" value="#1E293B">
-                                        <input type="text" class="color-text" value="#1E293B" readonly>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="cor_destaque">⭐ Cor de Destaque:</label>
-                                    <div class="color-input-group">
-                                        <input type="color" id="cor_destaque" name="cor_destaque" value="#8B5CF6">
-                                        <input type="text" class="color-text" value="#8B5CF6" readonly>
-                                    </div>
+                            <div class="form-group">
+                                <label for="cor_icones">🎯 Cor dos Ícones</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="cor_icones" name="cor_icones" value="#2563EB">
+                                    <input type="text" class="color-text" id="cor_icones_text" value="#2563EB" readonly>
                                 </div>
                             </div>
                         </div>
 
                         <div class="form-row">
-                            <div class="form-group" style="grid-column: 1 / -1;">
-                                <p style="color: var(--gray-400); font-size: 0.95rem;">
-                                    ✨ O sistema gera automaticamente <strong>6 imagens diferentes</strong>:
-                                </p>
-                                <ol style="color: var(--gray-400); font-size: 0.9rem; margin-left: 20px;">
-                                    <li>📸 Foto profissional do produto (fundo branco puro)</li>
-                                    <li>🎯 Benefício principal com ícone e texto</li>
-                                    <li>✅ Lista de usos ideais (academia, trabalho, etc)</li>
-                                    <li>🤲 Produto em uso (mão segurando + destaque)</li>
-                                    <li>📏 Medidas técnicas com diagrama</li>
-                                    <li>🏆 Garantia e envio (impacto final)</li>
-                                </ol>
+                            <div class="form-group">
+                                <label for="cor_fonte">✏️ Cor da Fonte</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="cor_fonte" name="cor_fonte" value="#1E293B">
+                                    <input type="text" class="color-text" id="cor_fonte_text" value="#1E293B" readonly>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cor_destaque">⭐ Cor de Destaque</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="cor_destaque" name="cor_destaque" value="#8B5CF6">
+                                    <input type="text" class="color-text" id="cor_destaque_text" value="#8B5CF6" readonly>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <button type="submit" id="btnGerar" class="btn-primary">
-                            <span class="btn-text">✨ Gerar Imagens</span>
-                            <span class="btn-loading" style="display: none;">⏳ Gerando...</span>
-                        </button>
-                    </form>
+                    <!-- Info sobre Imagens -->
+                    <div class="info-list">
+                        <h3>✨ 6 Imagens Profissionais Geradas:</h3>
+                        <ol>
+                            <li><strong>Foto Principal</strong> - Produto isolado, fundo branco puro</li>
+                            <li><strong>Benefícios</strong> - Layout com ícones + produto</li>
+                            <li><strong>Lista de Usos</strong> - "IDEAL PARA" com ícones</li>
+                            <li><strong>Produto em Uso</strong> - Imagem lifestyle</li>
+                            <li><strong>Medidas Técnicas</strong> - Dimensões com setas</li>
+                            <li><strong>Garantia</strong> - Call-to-action final</li>
+                        </ol>
+                    </div>
+
+                    <!-- Botão Gerar -->
+                    <button type="submit" id="btnGerar" class="btn-primary">
+                        <span id="btnText">✨ Gerar 6 Imagens Profissionais</span>
+                        <span id="btnLoading" style="display: none;">
+                            <span class="spinner"></span> Gerando imagens...
+                        </span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Informações e Dicas -->
+            <div class="card">
+                <h2 class="card-title">🚀 Como Funciona</h2>
+                
+                <div class="info-list">
+                    <h3>📝 Passo a Passo:</h3>
+                    <ol>
+                        <li><strong>Escreva</strong> a ficha técnica com nome e benefícios</li>
+                        <li><strong>Escolha</strong> fonte e cores da sua marca</li>
+                        <li><strong>Clique</strong> em "Gerar Imagens"</li>
+                        <li><strong>Aguarde</strong> 30-60 segundos</li>
+                        <li><strong>Baixe</strong> as 6 imagens criadas!</li>
+                    </ol>
                 </div>
 
-                <!-- Informações -->
-                <div class="info-card">
-                    <h3>🚀 Maximize suas Vendas!</h3>
-                    <ol>
-                        <li>📸 Envie a <strong>foto do seu produto</strong></li>
-                        <li>🎨 (Opcional) Use um <strong>template de sucesso</strong></li>
-                        <li>📋 Liste as <strong>características principais</strong></li>
-                        <li>✨ Clique em <strong>Gerar Imagens</strong></li>
-                        <li>⏳ Aguarde 30-60 segundos</li>
-                        <li>💰 Imagens otimizadas para <strong>CONVERTER</strong>!</li>
-                    </ol>
-                    <p style="margin-top: 15px; padding: 10px; background: #fef3c7; border-radius: 6px;">
-                        <strong>💡 Dica:</strong> Use ícones, textos curtos e destaque benefícios para aumentar conversões em 40%+
+                <div class="info-list">
+                    <h3>💡 Dicas para Melhores Resultados:</h3>
+                    <ul>
+                        <li><strong>Seja específico</strong> nos benefícios (24h, 100%, IP67)</li>
+                        <li><strong>Use números</strong> para credibilidade</li>
+                        <li><strong>3-5 benefícios</strong> é o ideal</li>
+                        <li><strong>Primeira linha</strong> deve ser o nome completo do produto</li>
+                        <li><strong>Use ✓</strong> no início de cada benefício</li>
+                    </ul>
+                </div>
+
+                <div class="info-list">
+                    <h3>🎨 Sugestões de Cores por Nicho:</h3>
+                    <div style="margin-top: 15px;">
+                        <span class="badge">Tech: #2563EB</span>
+                        <span class="badge">Premium: #1F2937</span>
+                        <span class="badge">Fitness: #EF4444</span>
+                        <span class="badge success">Eco: #10B981</span>
+                    </div>
+                </div>
+
+                <div class="info-list" style="margin-top: 25px;">
+                    <h3>⚡ Modelo de IA:</h3>
+                    <p style="color: var(--gray-400); margin-bottom: 10px;">
+                        Gemini 2.5 Flash Image (Nano Banana)
+                    </p>
+                    <p style="color: var(--gray-400); font-size: 0.9rem;">
+                        ✅ 500 imagens/dia grátis<br>
+                        ✅ ~83 conjuntos de 6 imagens/dia<br>
+                        ✅ Alta qualidade profissional
                     </p>
                 </div>
-            </section>
-
-            <!-- Área de Resultados -->
-            <section class="results-section" id="resultsSection" style="display: none;">
-                <h2>Suas Imagens Geradas</h2>
-                <div id="resultsGrid" class="results-grid"></div>
-            </section>
-
-            <!-- Galeria -->
-            <section class="gallery-section">
-                <div class="gallery-header">
-                    <h2>📸 Galeria de Imagens</h2>
-                    <button id="btnRefreshGallery" class="btn-secondary">🔄 Atualizar</button>
-                </div>
-                <div id="galleryGrid" class="gallery-grid">
-                    <p class="loading-text">Carregando galeria...</p>
-                </div>
-            </section>
-        </main>
-
-        <footer>
-            <p>Desenvolvido com ❤️ usando Google Gemini + Imagen API</p>
-            <p><small>As imagens são geradas por IA e podem conter imperfeições</small></p>
-        </footer>
-    </div>
-
-    <!-- Modal -->
-    <div id="imageModal" class="modal">
-        <span class="modal-close">&times;</span>
-        <img class="modal-content" id="modalImage">
-        <div class="modal-caption" id="modalCaption"></div>
-        <div class="modal-actions">
-            <button id="btnDownloadModal" class="btn-primary">⬇️ Download</button>
+            </div>
         </div>
+
+        <!-- Resultados -->
+        <div id="resultados" class="fade-in" style="display: none;">
+            <div class="card" style="margin-top: 40px;">
+                <h2 class="card-title">🎉 Suas Imagens Geradas</h2>
+                <div id="imagensGeradas" class="results-grid"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Powered by <a href="https://melixpress.com.br" target="_blank">MeliXpress</a> × Google Gemini AI</p>
+        </footer>
     </div>
 
     <script src="/static/js/app.js"></script>
