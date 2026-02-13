@@ -1,25 +1,27 @@
 #!/usr/bin/env python3
 """
 Aplicação Web Flask para Gerador de Imagens de Produtos
-Com upload de imagem de referência e template
+Usando Google Gemini API corretamente
 """
 
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_cors import CORS
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import os
-import io
 import base64
 from datetime import datetime
 from PIL import Image
-import json
+from io import BytesIO
 
 app = Flask(__name__)
 CORS(app)
 
 # Configurar API Key
 API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyCU8tdR0ikIEu9qWZftd6LCPjk5jBn-iLQ")
-genai.configure(api_key=API_KEY)
+
+# Criar cliente GenAI
+client = genai.Client(api_key=API_KEY)
 
 # Criar pastas
 OUTPUT_FOLDER = "static/imagens_geradas"
@@ -58,92 +60,76 @@ def gerar_imagem():
         produto_path = os.path.join(UPLOAD_FOLDER, produto_filename)
         imagem_produto.save(produto_path)
         
-        template_path = None
+        template_info = ""
         if template:
             template_filename = f"template_{timestamp}.png"
             template_path = os.path.join(UPLOAD_FOLDER, template_filename)
             template.save(template_path)
+            template_info = "\n- Siga o estilo visual do template fornecido"
         
-        # Criar prompt padrão otimizado para marketplaces
-        if template_path:
-            prompt = f"""Gere imagens desse produto em diferentes ângulos adicionando textos sobre a ficha técnica utilizando ícones e textos rápidos para maximizar conversão em marketplaces.
+        # Criar prompt otimizado para marketplaces
+        prompt = f"""Crie imagens profissionais de produto para marketplace com foco em conversão.
 
-FICHA TÉCNICA:
-{ficha_tecnica}
+PRODUTO: {ficha_tecnica}
 
-INSTRUÇÕES PARA ALTA CONVERSÃO EM MARKETPLACES:
-1. Mostre o produto em ângulos diferentes e estratégicos
-2. Use ÍCONES visuais para destacar características (✓, ⭐, 🔒, etc)
-3. Textos CURTOS e DIRETOS que chamem atenção
-4. Destaque BENEFÍCIOS principais com fontes grandes e legíveis
-5. Use cores CONTRASTANTES para textos importantes
-6. Adicione BADGES/SELOS de qualidade se aplicável
-7. Mantenha fundo LIMPO para destaque do produto
-8. Siga o estilo do template fornecido
-9. Foco em CONVERSÃO e VENDAS
-"""
-        else:
-            prompt = f"""Gere imagens desse produto em diferentes ângulos adicionando textos sobre a ficha técnica utilizando ícones e textos rápidos para maximizar conversão em marketplaces.
+ESTILO MARKETPLACE (Amazon/Mercado Livre):
+- Produto em destaque centralizado
+- Múltiplos ângulos (frente, lateral, detalhe)
+- Fundo BRANCO limpo
+- Textos CURTOS destacando benefícios principais
+- Ícones visuais (✓, ⭐, 🔒) para características
+- BADGES de "PREMIUM", "BESTSELLER"
+- Layout profissional e clean
+- Textos legíveis em miniaturas{template_info}
+- Design que CONVERTE e gera CLIQUES
 
-FICHA TÉCNICA:
-{ficha_tecnica}
-
-INSTRUÇÕES PARA ALTA CONVERSÃO EM MARKETPLACES:
-1. Mostre o produto em 3-4 ângulos diferentes (frente, lateral, detalhe, uso)
-2. Use ÍCONES visuais para cada benefício (✓, ⭐, 🔒, 💧, 🔥, etc)
-3. Textos CURTOS e IMPACTANTES (máximo 3-5 palavras por ponto)
-4. Destaque os 3 PRINCIPAIS BENEFÍCIOS com fontes grandes
-5. Use cores VIBRANTES e CONTRASTANTES
-6. Adicione BADGES de "PROMOÇÃO", "BESTSELLER", "QUALIDADE PREMIUM"
-7. Fundo BRANCO ou NEUTRO para destaque máximo
-8. Layout PROFISSIONAL estilo Amazon/Mercado Livre
-9. Foco total em CONVERSÃO e CLIQUES
-10. Textos legíveis mesmo em thumbnails pequenos
-"""
+Crie uma composição atrativa e profissional."""
         
-        # Gerar imagem usando Gemini
-        model = genai.GenerativeModel('gemini-1.5-pro')
-        
-        # Carregar imagem do produto
-        produto_img = Image.open(produto_path)
-        
-        # Preparar conteúdo para a API
-        content = [prompt, produto_img]
-        
-        # Se tiver template, adicionar
-        if template_path:
-            template_img = Image.open(template_path)
-            content.append(template_img)
-        
-        # Gerar resposta
-        response = model.generate_content(content)
-        
-        # Como o Gemini não gera imagens diretamente, vamos usar o Imagen
-        # Primeiro, vamos pegar a descrição gerada
-        descricao = response.text
-        
-        # Agora usar Imagen para gerar as imagens
-        imagen_model = genai.ImageGenerationModel("imagen-3.0-generate-001")
-        
-        result = imagen_model.generate_images(
-            prompt=descricao,
-            number_of_images=min(num_imagens, 4),
-            safety_filter_level="block_only_high",
-            aspect_ratio=aspect_ratio
-        )
+        # Gerar imagens usando Imagen
+        try:
+            response = client.models.generate_images(
+                model='imagen-3.0-generate-002',
+                prompt=prompt,
+                config=types.GenerateImagesConfig(
+                    number_of_images=min(num_imagens, 4),
+                    aspect_ratio=aspect_ratio,
+                    output_mime_type='image/png',
+                )
+            )
+        except Exception as api_error:
+            error_msg = str(api_error)
+            print(f"Erro na API: {error_msg}")
+            
+            # Mensagens de erro mais amigáveis
+            if "404" in error_msg or "not found" in error_msg.lower():
+                return jsonify({
+                    'sucesso': False,
+                    'erro': 'Modelo Imagen não encontrado. Verifique se a API está ativada no Google Cloud Console e se você tem uma conta paga.'
+                }), 500
+            elif "403" in error_msg or "permission" in error_msg.lower():
+                return jsonify({
+                    'sucesso': False,
+                    'erro': 'Sem permissão para usar Imagen. A geração de imagens está disponível apenas para contas pagas.'
+                }), 500
+            else:
+                return jsonify({
+                    'sucesso': False,
+                    'erro': f'Erro na API do Google: {error_msg}'
+                }), 500
         
         # Salvar imagens e preparar resposta
         imagens_urls = []
         
-        for i, image in enumerate(result.images):
-            filename = f"produto_gerado_{timestamp}_{i+1}.png"
+        for i, generated_image in enumerate(response.generated_images):
+            filename = f"produto_{timestamp}_{i+1}.png"
             filepath = os.path.join(OUTPUT_FOLDER, filename)
+            
+            # Salvar imagem
+            image = Image.open(BytesIO(generated_image.image.image_bytes))
             image.save(filepath)
             
             # Converter para base64
-            img_buffer = io.BytesIO()
-            image.save(img_buffer, format='PNG')
-            img_base64 = base64.b64encode(img_buffer.getvalue()).decode()
+            img_base64 = base64.b64encode(generated_image.image.image_bytes).decode()
             
             imagens_urls.append({
                 'url': f'/static/imagens_geradas/{filename}',
@@ -154,7 +140,7 @@ INSTRUÇÕES PARA ALTA CONVERSÃO EM MARKETPLACES:
         return jsonify({
             'sucesso': True,
             'imagens': imagens_urls,
-            'prompt_usado': descricao
+            'prompt_usado': prompt
         })
         
     except Exception as e:
@@ -163,7 +149,7 @@ INSTRUÇÕES PARA ALTA CONVERSÃO EM MARKETPLACES:
         traceback.print_exc()
         return jsonify({
             'sucesso': False,
-            'erro': str(e)
+            'erro': f'Erro ao gerar imagem: {str(e)}'
         }), 500
 
 @app.route('/galeria')
