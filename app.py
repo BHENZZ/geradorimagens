@@ -1,41 +1,25 @@
 #!/usr/bin/env python3
 """
 Aplicação Web Flask para Gerador de Imagens de Produtos
-Usando Google Gemini API corretamente
+Usando Nano Banana Pro (Gemini 3 Pro Image)
 """
 
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_cors import CORS
+import google.genai as genai
+from google.genai import types
+from PIL import Image
+from io import BytesIO
 import os
 import base64
 from datetime import datetime
-from PIL import Image
-from io import BytesIO
 
 app = Flask(__name__)
 CORS(app)
 
 # Configurar API Key
 API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyCU8tdR0ikIEu9qWZftd6LCPjk5jBn-iLQ")
-
-# Importar Google GenAI após configurar variáveis
-try:
-    import google.genai as genai
-    from google.genai import types
-    client = genai.Client(api_key=API_KEY)
-    GENAI_AVAILABLE = True
-except ImportError as e:
-    print(f"Erro ao importar google.genai: {e}")
-    print("Tentando importação alternativa...")
-    try:
-        from google import genai
-        from google.genai import types
-        client = genai.Client(api_key=API_KEY)
-        GENAI_AVAILABLE = True
-    except ImportError:
-        print("Google GenAI não disponível. Instalando...")
-        GENAI_AVAILABLE = False
-        client = None
+client = genai.Client(api_key=API_KEY)
 
 # Criar pastas
 OUTPUT_FOLDER = "static/imagens_geradas"
@@ -50,114 +34,88 @@ def index():
 
 @app.route('/gerar', methods=['POST'])
 def gerar_imagem():
-    """Endpoint para gerar imagem com produto"""
-    
-    # Verificar se GenAI está disponível
-    if not GENAI_AVAILABLE or client is None:
-        return jsonify({
-            'sucesso': False,
-            'erro': 'Google GenAI não está disponível. Verifique se a biblioteca está instalada corretamente.'
-        }), 500
-    
+    """Endpoint para gerar imagem usando Nano Banana Pro"""
     try:
         # Pegar dados do formulário
         ficha_tecnica = request.form.get('ficha_tecnica', '')
         num_imagens = int(request.form.get('num_imagens', 1))
         aspect_ratio = request.form.get('aspect_ratio', '1:1')
         
-        # Pegar arquivos
-        imagem_produto = request.files.get('imagem_produto')
-        template = request.files.get('template')
-        
         if not ficha_tecnica:
             return jsonify({'erro': 'Ficha técnica é obrigatória'}), 400
         
-        if not imagem_produto:
-            return jsonify({'erro': 'Imagem do produto é obrigatória'}), 400
-        
-        # Salvar imagens temporariamente
+        # Timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        produto_filename = f"produto_{timestamp}.png"
-        produto_path = os.path.join(UPLOAD_FOLDER, produto_filename)
-        imagem_produto.save(produto_path)
-        
-        template_info = ""
-        if template:
-            template_filename = f"template_{timestamp}.png"
-            template_path = os.path.join(UPLOAD_FOLDER, template_filename)
-            template.save(template_path)
-            template_info = "\n- Siga o estilo visual do template fornecido"
-        
         # Criar prompt otimizado para marketplaces
-        prompt = f"""Crie imagens profissionais de produto para marketplace com foco em conversão.
+        prompt = f"""Crie uma imagem profissional de produto para marketplace com foco em conversão.
 
 PRODUTO: {ficha_tecnica}
 
-ESTILO MARKETPLACE (Amazon/Mercado Livre):
+INSTRUÇÕES PARA ALTA CONVERSÃO:
 - Produto em destaque centralizado
-- Múltiplos ângulos (frente, lateral, detalhe)
-- Fundo BRANCO limpo
+- Fundo BRANCO limpo e profissional
 - Textos CURTOS destacando benefícios principais
 - Ícones visuais (✓, ⭐, 🔒) para características
-- BADGES de "PREMIUM", "BESTSELLER"
-- Layout profissional e clean
-- Textos legíveis em miniaturas{template_info}
+- BADGES de "PREMIUM", "BESTSELLER" se aplicável
+- Layout profissional estilo Amazon/Mercado Livre
+- Textos legíveis mesmo em miniaturas
 - Design que CONVERTE e gera CLIQUES
 
-Crie uma composição atrativa e profissional."""
+Crie uma composição atrativa, moderna e profissional."""
+
+        # Mapear aspect ratio para o formato do Gemini
+        resolution = "1K"  # Default 1024x1024
         
-        # Gerar imagens usando Imagen
-        try:
-            response = client.models.generate_images(
-                model='imagen-3.0-generate-002',
-                prompt=prompt,
-                config=types.GenerateImagesConfig(
-                    number_of_images=min(num_imagens, 4),
-                    aspect_ratio=aspect_ratio,
-                    output_mime_type='image/png',
-                )
-            )
-        except Exception as api_error:
-            error_msg = str(api_error)
-            print(f"Erro na API: {error_msg}")
-            
-            # Mensagens de erro mais amigáveis
-            if "404" in error_msg or "not found" in error_msg.lower():
-                return jsonify({
-                    'sucesso': False,
-                    'erro': 'Modelo Imagen não encontrado. Verifique se a API está ativada no Google Cloud Console e se você tem uma conta paga.'
-                }), 500
-            elif "403" in error_msg or "permission" in error_msg.lower():
-                return jsonify({
-                    'sucesso': False,
-                    'erro': 'Sem permissão para usar Imagen. A geração de imagens está disponível apenas para contas pagas.'
-                }), 500
-            else:
-                return jsonify({
-                    'sucesso': False,
-                    'erro': f'Erro na API do Google: {error_msg}'
-                }), 500
-        
-        # Salvar imagens e preparar resposta
+        # USAR NANO BANANA PRO (Gemini 3 Pro Image)
+        # Gerar múltiplas imagens
         imagens_urls = []
         
-        for i, generated_image in enumerate(response.generated_images):
-            filename = f"produto_{timestamp}_{i+1}.png"
-            filepath = os.path.join(OUTPUT_FOLDER, filename)
-            
-            # Salvar imagem
-            image = Image.open(BytesIO(generated_image.image.image_bytes))
-            image.save(filepath)
-            
-            # Converter para base64
-            img_base64 = base64.b64encode(generated_image.image.image_bytes).decode()
-            
-            imagens_urls.append({
-                'url': f'/static/imagens_geradas/{filename}',
-                'base64': f'data:image/png;base64,{img_base64}',
-                'filename': filename
-            })
+        for i in range(min(num_imagens, 4)):
+            try:
+                # Chamar API do Nano Banana Pro
+                response = client.models.generate_content(
+                    model='gemini-3-pro-image-preview',  # Nano Banana Pro
+                    contents=[prompt],
+                    config=types.GenerateContentConfig(
+                        response_modalities=["IMAGE"],
+                        temperature=1.0,
+                    )
+                )
+                
+                # Extrair imagem do response
+                image_data = None
+                for part in response.candidates[0].content.parts:
+                    if hasattr(part, 'inline_data') and part.inline_data:
+                        image_data = part.inline_data.data
+                        break
+                
+                if not image_data:
+                    raise Exception("Nenhuma imagem foi gerada")
+                
+                # Salvar imagem
+                filename = f"produto_{timestamp}_{i+1}.png"
+                filepath = os.path.join(OUTPUT_FOLDER, filename)
+                
+                # Salvar arquivo
+                with open(filepath, 'wb') as f:
+                    f.write(image_data)
+                
+                # Converter para base64
+                img_base64 = base64.b64encode(image_data).decode()
+                
+                imagens_urls.append({
+                    'url': f'/static/imagens_geradas/{filename}',
+                    'base64': f'data:image/png;base64,{img_base64}',
+                    'filename': filename
+                })
+                
+            except Exception as img_error:
+                print(f"Erro ao gerar imagem {i+1}: {str(img_error)}")
+                continue
+        
+        if not imagens_urls:
+            raise Exception("Nenhuma imagem foi gerada com sucesso")
         
         return jsonify({
             'sucesso': True,
@@ -169,9 +127,18 @@ Crie uma composição atrativa e profissional."""
         print(f"Erro detalhado: {str(e)}")
         import traceback
         traceback.print_exc()
+        
+        error_msg = str(e)
+        if "quota" in error_msg.lower():
+            error_msg = "Limite de quota excedido. Aguarde alguns minutos ou verifique seu plano."
+        elif "permission" in error_msg.lower() or "403" in error_msg:
+            error_msg = "Sem permissão. Verifique se a API está habilitada e se você tem uma conta paga."
+        elif "not found" in error_msg.lower() or "404" in error_msg:
+            error_msg = "Modelo não encontrado. Verifique se você tem acesso ao Nano Banana Pro."
+        
         return jsonify({
             'sucesso': False,
-            'erro': f'Erro ao gerar imagem: {str(e)}'
+            'erro': f'Erro ao gerar imagem: {error_msg}'
         }), 500
 
 @app.route('/galeria')
@@ -217,7 +184,8 @@ def health():
     """Verificar se a API está funcionando"""
     return jsonify({
         'status': 'online',
-        'api_key_configurada': bool(API_KEY)
+        'api_key_configurada': bool(API_KEY),
+        'modelo': 'gemini-3-pro-image-preview (Nano Banana Pro)'
     })
 
 if __name__ == '__main__':
