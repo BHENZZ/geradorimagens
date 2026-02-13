@@ -18,7 +18,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Configurar API Key
-API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyCU8tdR0ikIEu9qWZftd6LCPjk5jBn-iLQ")
+API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyCU8tdR0lKlEu9qWZftd6LCPjk5jBn-iLQ")
 client = genai.Client(api_key=API_KEY)
 
 # Criar pastas
