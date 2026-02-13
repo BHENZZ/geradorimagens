@@ -34,12 +34,11 @@ def index():
 
 @app.route('/gerar', methods=['POST'])
 def gerar_imagem():
-    """Endpoint para gerar imagem usando Nano Banana Pro"""
+    """Endpoint para gerar imagem usando Nano Banana (versão GRÁTIS)"""
     try:
         # Pegar dados do formulário
         ficha_tecnica = request.form.get('ficha_tecnica', '')
         num_imagens = int(request.form.get('num_imagens', 1))
-        aspect_ratio = request.form.get('aspect_ratio', '1:1')
         
         if not ficha_tecnica:
             return jsonify({'erro': 'Ficha técnica é obrigatória'}), 400
@@ -47,51 +46,55 @@ def gerar_imagem():
         # Timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        # Criar prompt otimizado para marketplaces
-        prompt = f"""Crie uma imagem profissional de produto para marketplace com foco em conversão.
+        # Criar prompt otimizado e CURTO (importante para o modelo grátis)
+        prompt = f"""Create a professional product image for e-commerce marketplace.
 
-PRODUTO: {ficha_tecnica}
+PRODUCT: {ficha_tecnica}
 
-INSTRUÇÕES PARA ALTA CONVERSÃO:
-- Produto em destaque centralizado
-- Fundo BRANCO limpo e profissional
-- Textos CURTOS destacando benefícios principais
-- Ícones visuais (✓, ⭐, 🔒) para características
-- BADGES de "PREMIUM", "BESTSELLER" se aplicável
-- Layout profissional estilo Amazon/Mercado Livre
-- Textos legíveis mesmo em miniaturas
-- Design que CONVERTE e gera CLIQUES
+Style: Clean white background, product centered, professional lighting, high quality, sharp details, e-commerce style like Amazon.
 
-Crie uma composição atrativa, moderna e profissional."""
+Make it attractive and professional."""
 
-        # Mapear aspect ratio para o formato do Gemini
-        resolution = "1K"  # Default 1024x1024
+        print(f"🎨 Gerando {num_imagens} imagem(ns)...")
+        print(f"📝 Prompt: {prompt[:100]}...")
         
-        # USAR NANO BANANA PRO (Gemini 3 Pro Image)
-        # Gerar múltiplas imagens
+        # USAR NANO BANANA (Versão GRÁTIS - Gemini 2.5 Flash Image)
         imagens_urls = []
         
         for i in range(min(num_imagens, 4)):
             try:
-                # Chamar API do Nano Banana Pro
+                print(f"⏳ Gerando imagem {i+1}/{num_imagens}...")
+                
+                # Chamar API do Nano Banana (GRÁTIS)
                 response = client.models.generate_content(
-                    model='gemini-3-pro-image-preview',  # Nano Banana Pro
+                    model='gemini-2.5-flash-image',  # Modelo GRÁTIS
                     contents=[prompt],
                     config=types.GenerateContentConfig(
                         response_modalities=["IMAGE"],
-                        temperature=1.0,
+                        temperature=0.9,
                     )
                 )
+                
+                print(f"✅ Response recebida para imagem {i+1}")
+                
+                # Verificar se há resposta
+                if not response or not response.candidates:
+                    raise Exception("API não retornou candidatos")
                 
                 # Extrair imagem do response
                 image_data = None
                 for part in response.candidates[0].content.parts:
                     if hasattr(part, 'inline_data') and part.inline_data:
                         image_data = part.inline_data.data
+                        print(f"📦 Dados da imagem encontrados: {len(image_data)} bytes")
                         break
                 
                 if not image_data:
-                    raise Exception("Nenhuma imagem foi gerada")
+                    print(f"⚠️ Nenhuma imagem gerada no response")
+                    # Tentar pegar de outra forma
+                    if hasattr(response.candidates[0].content.parts[0], 'text'):
+                        raise Exception(f"API retornou texto: {response.candidates[0].content.parts[0].text}")
+                    raise Exception("Nenhuma imagem foi gerada pela API")
                 
                 # Salvar imagem
                 filename = f"produto_{timestamp}_{i+1}.png"
@@ -100,6 +103,8 @@ Crie uma composição atrativa, moderna e profissional."""
                 # Salvar arquivo
                 with open(filepath, 'wb') as f:
                     f.write(image_data)
+                
+                print(f"💾 Imagem salva: {filepath}")
                 
                 # Converter para base64
                 img_base64 = base64.b64encode(image_data).decode()
@@ -110,12 +115,18 @@ Crie uma composição atrativa, moderna e profissional."""
                     'filename': filename
                 })
                 
+                print(f"✅ Imagem {i+1} processada com sucesso!")
+                
             except Exception as img_error:
-                print(f"Erro ao gerar imagem {i+1}: {str(img_error)}")
+                print(f"❌ Erro ao gerar imagem {i+1}: {str(img_error)}")
+                import traceback
+                traceback.print_exc()
                 continue
         
         if not imagens_urls:
-            raise Exception("Nenhuma imagem foi gerada com sucesso")
+            raise Exception("Nenhuma imagem foi gerada com sucesso. Verifique se a API está habilitada e se você tem quota disponível.")
+        
+        print(f"🎉 Sucesso! {len(imagens_urls)} imagem(ns) gerada(s)")
         
         return jsonify({
             'sucesso': True,
@@ -124,21 +135,25 @@ Crie uma composição atrativa, moderna e profissional."""
         })
         
     except Exception as e:
-        print(f"Erro detalhado: {str(e)}")
+        print(f"❌ Erro geral: {str(e)}")
         import traceback
         traceback.print_exc()
         
         error_msg = str(e)
-        if "quota" in error_msg.lower():
-            error_msg = "Limite de quota excedido. Aguarde alguns minutos ou verifique seu plano."
+        
+        # Mensagens de erro mais amigáveis
+        if "quota" in error_msg.lower() or "limit" in error_msg.lower():
+            error_msg = "Limite de quota excedido. Você atingiu o limite de 500 imagens/dia grátis. Tente novamente amanhã ou configure billing."
         elif "permission" in error_msg.lower() or "403" in error_msg:
-            error_msg = "Sem permissão. Verifique se a API está habilitada e se você tem uma conta paga."
+            error_msg = "Sem permissão. Verifique se a Gemini API está habilitada no Google AI Studio."
         elif "not found" in error_msg.lower() or "404" in error_msg:
-            error_msg = "Modelo não encontrado. Verifique se você tem acesso ao Nano Banana Pro."
+            error_msg = "Modelo não encontrado. Verifique se você tem acesso ao Gemini API."
+        elif "api key" in error_msg.lower():
+            error_msg = "API Key inválida. Verifique se configurou corretamente no Render."
         
         return jsonify({
             'sucesso': False,
-            'erro': f'Erro ao gerar imagem: {error_msg}'
+            'erro': error_msg
         }), 500
 
 @app.route('/galeria')
@@ -185,7 +200,8 @@ def health():
     return jsonify({
         'status': 'online',
         'api_key_configurada': bool(API_KEY),
-        'modelo': 'gemini-3-pro-image-preview (Nano Banana Pro)'
+        'modelo': 'gemini-2.5-flash-image (Nano Banana - GRÁTIS)',
+        'limite_diario': '500 imagens/dia'
     })
 
 if __name__ == '__main__':
