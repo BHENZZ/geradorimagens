@@ -1,250 +1,163 @@
-// Variáveis globais
-let currentDownloadUrl = '';
+// ==========================================
+// 🎨 MELIXPRESS AI - JavaScript
+// ==========================================
 
-// Inicialização
 document.addEventListener('DOMContentLoaded', function() {
-    // Event Listeners
+    console.log('✅ MeliXpress AI carregado!');
+    
+    // Elementos
     const form = document.getElementById('formGerar');
-    form.addEventListener('submit', gerarImagem);
-    
-    document.getElementById('btnRefreshGallery').addEventListener('click', carregarGaleria);
-    
-    // Upload de imagens
-    setupImageUpload('imagem_produto', 'previewProduto');
-    setupImageUpload('template', 'previewTemplate');
-    
-    // Modal
-    const modal = document.getElementById('imageModal');
-    const modalClose = document.querySelector('.modal-close');
-    const btnDownloadModal = document.getElementById('btnDownloadModal');
-    
-    modalClose.addEventListener('click', () => {
-        modal.style.display = 'none';
-    });
-    
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
-    
-    btnDownloadModal.addEventListener('click', () => {
-        if (currentDownloadUrl) {
-            window.open(currentDownloadUrl, '_blank');
-        }
-    });
-    
-    // Carregar galeria inicial
-    carregarGaleria();
-});
-
-// Setup upload de imagem com preview
-function setupImageUpload(inputId, previewId) {
-    const input = document.getElementById(inputId);
-    const preview = document.getElementById(previewId);
-    const uploadArea = input.closest('.upload-area');
-    
-    input.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-                uploadArea.querySelector('.upload-placeholder').style.display = 'none';
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-    
-    // Drag and drop
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.style.borderColor = 'var(--primary-color)';
-        uploadArea.style.background = 'var(--light-bg)';
-    });
-    
-    uploadArea.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        uploadArea.style.borderColor = 'var(--border-color)';
-        uploadArea.style.background = 'white';
-    });
-    
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.style.borderColor = 'var(--border-color)';
-        uploadArea.style.background = 'white';
-        
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) {
-            input.files = e.dataTransfer.files;
-            const event = new Event('change');
-            input.dispatchEvent(event);
-        }
-    });
-}
-
-// Função para gerar imagem
-async function gerarImagem(e) {
-    e.preventDefault();
-    
     const btnGerar = document.getElementById('btnGerar');
-    const resultsSection = document.getElementById('resultsSection');
-    const resultsGrid = document.getElementById('resultsGrid');
+    const btnText = document.getElementById('btnText');
+    const btnLoading = document.getElementById('btnLoading');
+    const resultados = document.getElementById('resultados');
+    const imagensGeradas = document.getElementById('imagensGeradas');
     
-    // Validação
-    const imagemProduto = document.getElementById('imagem_produto').files[0];
-    const fichaTecnica = document.getElementById('ficha_tecnica').value.trim();
+    // Color pickers
+    const corIcones = document.getElementById('cor_icones');
+    const corIconesText = document.getElementById('cor_icones_text');
+    const corFonte = document.getElementById('cor_fonte');
+    const corFonteText = document.getElementById('cor_fonte_text');
+    const corDestaque = document.getElementById('cor_destaque');
+    const corDestaqueText = document.getElementById('cor_destaque_text');
     
-    if (!imagemProduto) {
-        alert('Por favor, envie a imagem do produto!');
-        return;
-    }
-    
-    if (!fichaTecnica) {
-        alert('Por favor, preencha a ficha técnica do produto!');
-        return;
-    }
-    
-    // Desabilitar botão e mostrar loading
-    btnGerar.disabled = true;
-    btnGerar.querySelector('.btn-text').style.display = 'none';
-    btnGerar.querySelector('.btn-loading').style.display = 'inline';
-    
-    // Mostrar seção de resultados com loading
-    resultsSection.style.display = 'block';
-    resultsGrid.innerHTML = '<div class="spinner"></div><p class="loading-text">Gerando suas imagens profissionais... Isso pode levar até 60 segundos.</p>';
-    
-    try {
-        // Preparar FormData
-        const formData = new FormData(document.getElementById('formGerar'));
-        
-        const response = await fetch('/gerar', {
-            method: 'POST',
-            body: formData
+    // Atualizar preview de cores
+    if (corIcones) {
+        corIcones.addEventListener('input', function(e) {
+            corIconesText.value = e.target.value.toUpperCase();
         });
-        
-        const data = await response.json();
-        
-        if (data.sucesso) {
-            // Mostrar imagens geradas
-            mostrarResultados(data.imagens, data.prompt_usado);
-            
-            // Atualizar galeria
-            setTimeout(() => carregarGaleria(), 1000);
-            
-            // Scroll suave para os resultados
-            resultsSection.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            throw new Error(data.erro || 'Erro ao gerar imagem');
-        }
-        
-    } catch (error) {
-        console.error('Erro:', error);
-        resultsGrid.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #ef4444;">
-                <h3>❌ Erro ao gerar imagem</h3>
-                <p>${error.message}</p>
-                <small>Verifique sua conexão, a API Key e tente novamente.</small>
-            </div>
-        `;
-    } finally {
-        // Reabilitar botão
-        btnGerar.disabled = false;
-        btnGerar.querySelector('.btn-text').style.display = 'inline';
-        btnGerar.querySelector('.btn-loading').style.display = 'none';
     }
-}
-
-// Função para mostrar resultados
-function mostrarResultados(imagens, prompt) {
-    const resultsGrid = document.getElementById('resultsGrid');
-    resultsGrid.innerHTML = '';
     
-    imagens.forEach((img, index) => {
-        const div = document.createElement('div');
-        div.className = 'result-item';
-        div.innerHTML = `
-            <img src="${img.base64}" alt="Imagem gerada ${index + 1}">
-            <div class="result-item-overlay">
-                <p><strong>Imagem ${index + 1}</strong></p>
-                <button class="download-btn" onclick="downloadImagem('${img.url}', '${img.filename}')">
-                    ⬇️ Download
-                </button>
-            </div>
-        `;
-        
-        div.querySelector('img').addEventListener('click', function() {
-            abrirModal(img.base64, `Imagem ${index + 1}`, img.url);
+    if (corFonte) {
+        corFonte.addEventListener('input', function(e) {
+            corFonteText.value = e.target.value.toUpperCase();
         });
-        
-        resultsGrid.appendChild(div);
-    });
-}
-
-// Função para carregar galeria
-async function carregarGaleria() {
-    const galleryGrid = document.getElementById('galleryGrid');
-    galleryGrid.innerHTML = '<div class="spinner"></div><p class="loading-text">Carregando galeria...</p>';
+    }
     
-    try {
-        const response = await fetch('/galeria');
-        const data = await response.json();
-        
-        if (data.sucesso) {
-            if (data.imagens.length === 0) {
-                galleryGrid.innerHTML = '<p class="loading-text">Nenhuma imagem gerada ainda. Crie sua primeira!</p>';
-                return;
-            }
+    if (corDestaque) {
+        corDestaque.addEventListener('input', function(e) {
+            corDestaqueText.value = e.target.value.toUpperCase();
+        });
+    }
+    
+    // Enviar formulário
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            galleryGrid.innerHTML = '';
-            data.imagens.forEach(img => {
-                const div = document.createElement('div');
-                div.className = 'gallery-item';
-                div.innerHTML = `<img src="${img.url}" alt="${img.filename}">`;
+            console.log('📤 Enviando requisição...');
+            
+            // Mostrar loading
+            btnGerar.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'flex';
+            resultados.style.display = 'none';
+            imagensGeradas.innerHTML = '';
+            
+            try {
+                // Preparar dados
+                const formData = new FormData();
+                formData.append('ficha_tecnica', document.getElementById('ficha_tecnica').value);
+                formData.append('fonte', document.getElementById('fonte').value);
+                formData.append('cor_icones', document.getElementById('cor_icones').value);
+                formData.append('cor_fonte', document.getElementById('cor_fonte').value);
+                formData.append('cor_destaque', document.getElementById('cor_destaque').value);
                 
-                div.addEventListener('click', function() {
-                    abrirModal(img.url, img.filename, img.url);
+                console.log('📝 Dados preparados:', {
+                    ficha: document.getElementById('ficha_tecnica').value.substring(0, 50) + '...',
+                    fonte: document.getElementById('fonte').value,
+                    cores: {
+                        icones: document.getElementById('cor_icones').value,
+                        fonte: document.getElementById('cor_fonte').value,
+                        destaque: document.getElementById('cor_destaque').value
+                    }
                 });
                 
-                galleryGrid.appendChild(div);
-            });
-        } else {
-            throw new Error(data.erro || 'Erro ao carregar galeria');
-        }
-        
-    } catch (error) {
-        console.error('Erro ao carregar galeria:', error);
-        galleryGrid.innerHTML = '<p class="loading-text" style="color: #ef4444;">Erro ao carregar galeria</p>';
+                // Enviar requisição
+                const response = await fetch('/gerar', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('📥 Resposta recebida:', response.status);
+                
+                // Verificar se response é JSON válido
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Resposta não é JSON válido. Verifique os logs do servidor.');
+                }
+                
+                const data = await response.json();
+                
+                console.log('✅ Dados parseados:', data);
+                
+                if (data.sucesso) {
+                    // Mostrar imagens
+                    mostrarImagens(data.imagens);
+                    
+                    // Scroll para resultados
+                    setTimeout(() => {
+                        resultados.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 300);
+                } else {
+                    // Mostrar erro
+                    mostrarErro(data.erro || 'Erro desconhecido');
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                mostrarErro(`Erro: ${error.message}`);
+            } finally {
+                // Restaurar botão
+                btnGerar.disabled = false;
+                btnText.style.display = 'block';
+                btnLoading.style.display = 'none';
+            }
+        });
     }
-}
-
-// Função para abrir modal
-function abrirModal(imageSrc, caption, downloadUrl) {
-    const modal = document.getElementById('imageModal');
-    const modalImg = document.getElementById('modalImage');
-    const modalCaption = document.getElementById('modalCaption');
     
-    modal.style.display = 'block';
-    modalImg.src = imageSrc;
-    modalCaption.textContent = caption;
-    currentDownloadUrl = downloadUrl;
-}
-
-// Função para download de imagem
-function downloadImagem(url, filename) {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
-
-// Atalhos de teclado
-document.addEventListener('keydown', function(e) {
-    // ESC para fechar modal
-    if (e.key === 'Escape') {
-        document.getElementById('imageModal').style.display = 'none';
+    // Função para mostrar imagens
+    function mostrarImagens(imagens) {
+        console.log(`🖼️ Mostrando ${imagens.length} imagens`);
+        
+        imagensGeradas.innerHTML = '';
+        resultados.style.display = 'block';
+        
+        imagens.forEach((img, index) => {
+            const card = document.createElement('div');
+            card.className = 'result-card fade-in';
+            card.style.animationDelay = `${index * 0.1}s`;
+            
+            card.innerHTML = `
+                <img src="${img.base64}" alt="${img.tipo}">
+                <h4>${img.tipo.replace(/_/g, ' ')}</h4>
+                <p>${img.descricao}</p>
+                <a href="${img.url}" download="${img.filename}" class="btn-primary" style="display: inline-block; padding: 12px 24px; text-decoration: none; font-size: 0.9rem;">
+                    💾 Baixar Imagem
+                </a>
+            `;
+            
+            imagensGeradas.appendChild(card);
+        });
+    }
+    
+    // Função para mostrar erro
+    function mostrarErro(mensagem) {
+        console.error('🚨 Erro:', mensagem);
+        
+        imagensGeradas.innerHTML = `
+            <div class="error-message" style="grid-column: 1 / -1;">
+                <h3 style="margin-bottom: 10px;">❌ Erro ao gerar imagens</h3>
+                <p>${mensagem}</p>
+                <br>
+                <p style="font-size: 0.9rem; opacity: 0.8;">
+                    💡 <strong>Possíveis soluções:</strong><br>
+                    • Verifique se a API Key está configurada corretamente no Render<br>
+                    • Verifique se você tem quota disponível (500 imagens/dia grátis)<br>
+                    • Tente novamente em alguns minutos
+                </p>
+            </div>
+        `;
+        resultados.style.display = 'block';
     }
 });
