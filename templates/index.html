@@ -55,40 +55,79 @@
                                 id="ficha_tecnica" 
                                 name="ficha_tecnica"
                                 rows="6" 
-                                placeholder="Exemplo otimizado para marketplaces:
+                                placeholder="Exemplo otimizado para conversão:
 
 Garrafa Térmica Premium 1L
 ✓ Mantém 24h gelado / 12h quente
 ✓ Tampa com trava de segurança
 ✓ Vedação 100% à prova de vazamentos
 ✓ Aço inoxidável resistente
-✓ Design moderno e ergonômico
-✓ Livre de BPA"
+✓ Design moderno ergonômico
+✓ Livre de BPA
+
+Dica: Use ✓ para criar design com ícones!"
                                 required
                             ></textarea>
-                            <small>💡 Destaque BENEFÍCIOS, não só especificações técnicas</small>
+                            <small>💡 Use ✓ para criar design com ícones</small>
+                        </div>
+
+                        <!-- Seletores de Customização Visual -->
+                        <div class="customization-card">
+                            <h3 style="color: var(--white); margin-bottom: 20px;">🎨 Customização Visual</h3>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fonte">🔤 Fonte:</label>
+                                    <select id="fonte" name="fonte">
+                                        <option value="Inter" selected>Inter (Moderno)</option>
+                                        <option value="Montserrat">Montserrat (Elegante)</option>
+                                        <option value="Poppins">Poppins (Arredondado)</option>
+                                        <option value="Roboto">Roboto (Clean)</option>
+                                        <option value="Helvetica">Helvetica (Clássico)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="cor_icones">🎯 Cor dos Ícones:</label>
+                                    <div class="color-input-group">
+                                        <input type="color" id="cor_icones" name="cor_icones" value="#2563EB">
+                                        <input type="text" class="color-text" value="#2563EB" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cor_fonte">✏️ Cor da Fonte:</label>
+                                    <div class="color-input-group">
+                                        <input type="color" id="cor_fonte" name="cor_fonte" value="#1E293B">
+                                        <input type="text" class="color-text" value="#1E293B" readonly>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="cor_destaque">⭐ Cor de Destaque:</label>
+                                    <div class="color-input-group">
+                                        <input type="color" id="cor_destaque" name="cor_destaque" value="#8B5CF6">
+                                        <input type="text" class="color-text" value="#8B5CF6" readonly>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="form-row">
-                            <div class="form-group">
-                                <label for="num_imagens">Número de Imagens:</label>
-                                <select id="num_imagens" name="num_imagens">
-                                    <option value="1">1 imagem</option>
-                                    <option value="2">2 imagens</option>
-                                    <option value="3">3 imagens</option>
-                                    <option value="4" selected>4 imagens</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="aspect_ratio">Proporção:</label>
-                                <select id="aspect_ratio" name="aspect_ratio">
-                                    <option value="1:1" selected>Quadrado (1:1)</option>
-                                    <option value="16:9">Paisagem (16:9)</option>
-                                    <option value="9:16">Retrato (9:16)</option>
-                                    <option value="4:3">4:3</option>
-                                    <option value="3:4">3:4</option>
-                                </select>
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <p style="color: var(--gray-400); font-size: 0.95rem;">
+                                    ✨ O sistema gera automaticamente <strong>6 imagens diferentes</strong>:
+                                </p>
+                                <ol style="color: var(--gray-400); font-size: 0.9rem; margin-left: 20px;">
+                                    <li>📸 Foto profissional do produto (fundo branco puro)</li>
+                                    <li>🎯 Benefício principal com ícone e texto</li>
+                                    <li>✅ Lista de usos ideais (academia, trabalho, etc)</li>
+                                    <li>🤲 Produto em uso (mão segurando + destaque)</li>
+                                    <li>📏 Medidas técnicas com diagrama</li>
+                                    <li>🏆 Garantia e envio (impacto final)</li>
+                                </ol>
                             </div>
                         </div>
 
