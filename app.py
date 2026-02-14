@@ -272,10 +272,16 @@ def _gerar_imagem_internal():
                 
                 print(f"✅ Imagem {i+1} ({config['tipo']}) concluída!")
                 
-                # IMPORTANTE: Limpar variáveis para liberar memória
-                del response
-                del image_data
-                del img_base64
+                # IMPORTANTE: Limpar variáveis para liberar memória (com segurança)
+                try:
+                    del response
+                except: pass
+                try:
+                    del image_data
+                except: pass
+                try:
+                    del img_base64
+                except: pass
                 
                 # Force garbage collection
                 import gc
@@ -288,11 +294,18 @@ def _gerar_imagem_internal():
                 import traceback
                 traceback.print_exc()
                 
-                # Liberar memória mesmo em caso de erro
+                # Liberar memória mesmo em caso de erro (com segurança)
+                try:
+                    del response
+                except: pass
+                try:
+                    del image_data  
+                except: pass
+                
                 import gc
                 gc.collect()
                 
-                # NÃO usar continue aqui - queremos continuar tentando as próximas
+                # Continuar tentando as próximas imagens
                 continue
         
         if not imagens_urls:
