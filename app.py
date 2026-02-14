@@ -98,7 +98,7 @@ def _gerar_imagem_internal():
                     img_bytes = file.read()
                     print(f"   Tamanho: {len(img_bytes)} bytes")
                     
-                    import base64
+                    # Converter para base64 (módulo já importado no topo)
                     imagem_produto_base64 = base64.b64encode(img_bytes).decode('utf-8')
                     imagem_produto_mime = file.content_type or 'image/jpeg'
                     
