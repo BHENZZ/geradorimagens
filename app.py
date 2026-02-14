@@ -40,6 +40,22 @@ def gerar_imagem():
     print("🎨 INICIANDO GERAÇÃO DE IMAGENS")
     print("="*50)
     
+    # IMPORTANTE: Garantir que SEMPRE retorna JSON
+    try:
+        return _gerar_imagem_internal()
+    except Exception as e:
+        print(f"❌ ERRO CRÍTICO: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Garantir resposta JSON mesmo em erro crítico
+        return jsonify({
+            'sucesso': False,
+            'erro': f'Erro no servidor: {str(e)}'
+        }), 500
+
+def _gerar_imagem_internal():
+    """Lógica interna de geração (separada para tratamento de erro)"""
     try:
         # Validar API Key
         print(f"🔑 Verificando API Key...")
@@ -67,17 +83,35 @@ def gerar_imagem():
         
         # Verificar se tem imagem do produto
         imagem_produto_base64 = None
+        imagem_produto_mime = None
+        
         if 'imagem_produto' in request.files:
             file = request.files['imagem_produto']
-            if file and file.filename:
-                print(f"📸 Imagem do produto recebida: {file.filename}")
-                import base64
-                from io import BytesIO
+            if file and file.filename != '':
+                print(f"📸 Imagem do produto recebida!")
+                print(f"   Nome: {file.filename}")
+                print(f"   Content-Type: {file.content_type}")
                 
-                # Converter para base64
-                img_bytes = file.read()
-                imagem_produto_base64 = base64.b64encode(img_bytes).decode('utf-8')
-                print(f"✅ Imagem convertida para base64: {len(imagem_produto_base64)} chars")
+                try:
+                    # Ler e converter para base64
+                    img_bytes = file.read()
+                    print(f"   Tamanho: {len(img_bytes)} bytes")
+                    
+                    import base64
+                    imagem_produto_base64 = base64.b64encode(img_bytes).decode('utf-8')
+                    imagem_produto_mime = file.content_type or 'image/jpeg'
+                    
+                    print(f"✅ Imagem convertida para base64: {len(imagem_produto_base64)} chars")
+                    print(f"   MIME Type: {imagem_produto_mime}")
+                    
+                    # TODO: Integrar imagem nos prompts (próxima versão)
+                    # Por enquanto apenas validamos que o upload funciona
+                    
+                except Exception as img_error:
+                    print(f"⚠️ Erro ao processar imagem: {str(img_error)}")
+                    # Não falhar se der erro no upload - continuar sem imagem
+        else:
+            print(f"📸 Nenhuma imagem do produto enviada (opcional)")
         
         if not ficha_tecnica:
             print("❌ Ficha técnica vazia!")
@@ -102,10 +136,25 @@ def gerar_imagem():
         # Timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        # Dividir ficha técnica em linhas
+        # Dividir ficha técnica em linhas e extrair benefícios AUTOMATICAMENTE
         linhas_ficha = [linha.strip() for linha in ficha_tecnica.split('\n') if linha.strip()]
+        
+        # Primeira linha = Nome do produto
         produto_nome = linhas_ficha[0] if linhas_ficha else "Produto"
-        beneficios = [l for l in linhas_ficha[1:] if l.startswith('✓') or l.startswith('-')]
+        
+        # Extrair benefícios automaticamente (qualquer linha que não seja a primeira)
+        # Aceita linhas com ✓, -, •, números, ou qualquer texto
+        beneficios = []
+        for linha in linhas_ficha[1:]:
+            # Limpar caracteres especiais do início
+            linha_limpa = linha.lstrip('✓-•►▪︎▸▹▶▷●○◆◇■□★☆0123456789.)> ')
+            if linha_limpa and len(linha_limpa) > 3:  # Ignorar linhas muito curtas
+                beneficios.append(linha_limpa)
+        
+        print(f"📝 Produto: {produto_nome}")
+        print(f"🎯 Benefícios extraídos automaticamente: {len(beneficios)}")
+        for i, b in enumerate(beneficios[:5], 1):
+            print(f"   {i}. {b}")
         
         print(f"🎨 Gerando 6 imagens diferentes do produto...")
         print(f"📝 Produto: {produto_nome}")
