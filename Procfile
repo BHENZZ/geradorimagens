@@ -1,1 +1,1 @@
-web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 1 --timeout 900 --max-requests 10 --worker-class sync --preload --worker-tmp-dir /dev/shm --log-level info --access-logfile - --error-logfile -
+web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 1 --timeout 120 --worker-class sync --preload --log-level info
