@@ -11,6 +11,7 @@ from google.genai import types
 from PIL import Image
 from io import BytesIO
 import os
+import base64
 from datetime import datetime
 from prompts_6_imagens import get_prompts_config
 
