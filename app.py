@@ -268,13 +268,18 @@ def _gerar_imagem_internal():
                 
                 imagens_urls.append({
                     'url': f'/static/imagens_geradas/{filename}',
-                    'base64': f'data:image/png;base64,{img_base64}',
                     'filename': filename,
                     'tipo': config['tipo'],
                     'descricao': config['descricao']
                 })
                 
                 print(f"✅ Imagem {i+1} ({config['tipo']}) concluída!")
+                import time
+                time.sleep(2)
+                import gc
+                gc.collect()
+                ```
+                
                 
                 # IMPORTANTE: Limpar variáveis para liberar memória (com segurança)
                 try:
