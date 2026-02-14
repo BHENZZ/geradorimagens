@@ -22,7 +22,21 @@
             <div class="card">
                 <h2 class="card-title">Criar Imagens do Produto</h2>
                 
-                <form id="formGerar">
+                <form id="formGerar" enctype="multipart/form-data">
+                    <!-- Upload Imagem do Produto -->
+                    <div class="form-group">
+                        <label for="imagem_produto">📸 Imagem do Produto (Opcional)</label>
+                        <div class="upload-area" id="uploadArea">
+                            <input type="file" id="imagem_produto" name="imagem_produto" accept="image/*">
+                            <div class="upload-placeholder" id="uploadPlaceholder">
+                                <span class="upload-icon">📁</span>
+                                <p>Clique ou arraste a imagem do produto aqui</p>
+                                <small>PNG, JPG ou JPEG - Será usada como referência</small>
+                            </div>
+                            <img id="imagePreview" class="image-preview" style="display: none;">
+                        </div>
+                    </div>
+                    
                     <!-- Ficha Técnica -->
                     <div class="form-group">
                         <label for="ficha_tecnica">📋 Ficha Técnica do Produto *</label>
@@ -31,22 +45,24 @@
                             name="ficha_tecnica"
                             rows="8" 
                             placeholder="Nome do Produto (primeira linha)
-✓ Benefício 1
-✓ Benefício 2
-✓ Benefício 3
-✓ Benefício 4
-✓ Benefício 5
+Benefício 1
+Benefício 2  
+Benefício 3
+Benefício 4
+Benefício 5
 
 Exemplo:
 Garrafa Térmica Premium Sport 1L
-✓ Mantém temperatura por 24 horas
-✓ Tampa com trava anti-vazamento
-✓ Aço inoxidável durável
-✓ Design ergonômico confortável
-✓ Livre de BPA"
+Mantém temperatura por 24 horas
+Tampa com trava anti-vazamento
+Aço inoxidável durável
+Design ergonômico confortável
+Livre de BPA
+
+💡 Não precisa usar ✓ - a IA identifica automaticamente!"
                             required
                         ></textarea>
-                        <small>💡 Use ✓ no início de cada benefício. Primeira linha = Nome do produto</small>
+                        <small>💡 Primeira linha = Nome do produto. Demais linhas = Benefícios (a IA identifica automaticamente!)</small>
                     </div>
 
                     <!-- Customização Visual -->
