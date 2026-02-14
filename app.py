@@ -176,38 +176,78 @@ def _gerar_imagem_internal():
         # Gerar as 6 imagens UMA POR VEZ (para não estourar memória)
         imagens_urls = []
         
+        print(f"\n{'='*60}")
+        print(f"🎨 INICIANDO GERAÇÃO DAS 6 IMAGENS")
+        print(f"{'='*60}")
+        
         for i, config in enumerate(prompts_config):
             try:
-                print(f"⏳ Gerando imagem {i+1}/6 - {config['tipo']}...")
-                print(f"📝 Prompt: {config['prompt'][:100]}...")
+                print(f"\n{'─'*60}")
+                print(f"⏳ IMAGEM {i+1}/6 - {config['tipo']}")
+                print(f"{'─'*60}")
+                
+                print(f"📝 Prompt (primeiros 150 chars):")
+                print(f"   {config['prompt'][:150]}...")
+                
+                print(f"\n🔧 Chamando API Gemini...")
+                print(f"   Modelo: gemini-2.5-flash-image")
+                print(f"   Temperature: 0.9")
                 
                 # Chamar API
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash-image',
-                    contents=[config['prompt']],
-                    config=types.GenerateContentConfig(
-                        response_modalities=["IMAGE"],
-                        temperature=0.9,
+                try:
+                    response = client.models.generate_content(
+                        model='gemini-2.5-flash-image',
+                        contents=[config['prompt']],
+                        config=types.GenerateContentConfig(
+                            response_modalities=["IMAGE"],
+                            temperature=0.9,
+                        )
                     )
-                )
-                
-                print(f"✅ Response recebida para {config['tipo']}")
+                    print(f"✅ API respondeu!")
+                    
+                except Exception as api_error:
+                    print(f"❌ ERRO NA CHAMADA DA API:")
+                    print(f"   Tipo: {type(api_error).__name__}")
+                    print(f"   Mensagem: {str(api_error)}")
+                    raise
                 
                 # Verificar resposta
-                if not response or not response.candidates:
-                    print(f"⚠️ API não retornou candidatos para {config['tipo']}")
+                if not response:
+                    print(f"⚠️ Response é None!")
+                    continue
+                    
+                print(f"📦 Response object: {type(response)}")
+                
+                if not hasattr(response, 'candidates'):
+                    print(f"⚠️ Response não tem atributo 'candidates'!")
+                    continue
+                    
+                if not response.candidates:
+                    print(f"⚠️ Response.candidates está vazio!")
                     continue
                 
+                print(f"✅ Response tem {len(response.candidates)} candidate(s)")
+                
                 # Extrair imagem
+                print(f"\n🔍 Procurando imagem nos parts...")
                 image_data = None
-                for part in response.candidates[0].content.parts:
-                    if hasattr(part, 'inline_data') and part.inline_data:
-                        image_data = part.inline_data.data
-                        print(f"📦 Dados encontrados: {len(image_data)} bytes")
-                        break
+                
+                for part_idx, part in enumerate(response.candidates[0].content.parts):
+                    print(f"   Part {part_idx}: {type(part)}")
+                    
+                    if hasattr(part, 'inline_data'):
+                        if part.inline_data:
+                            image_data = part.inline_data.data
+                            print(f"   ✅ IMAGEM ENCONTRADA no part {part_idx}!")
+                            print(f"   📦 Tamanho: {len(image_data)} bytes")
+                            break
+                        else:
+                            print(f"   ⚠️ Part tem inline_data mas está None")
+                    else:
+                        print(f"   ⚠️ Part não tem inline_data")
                 
                 if not image_data:
-                    print(f"⚠️ Nenhuma imagem gerada para {config['tipo']}")
+                    print(f"❌ Nenhuma imagem encontrada nos {len(response.candidates[0].content.parts)} parts")
                     continue
                 
                 # Salvar imagem
@@ -324,6 +364,72 @@ def download(filename):
         return send_file(filepath, as_attachment=True)
     except Exception as e:
         return jsonify({'erro': str(e)}), 404
+
+@app.route('/debug')
+def debug():
+    """Endpoint de debug detalhado"""
+    try:
+        debug_info = {
+            'status': 'running',
+            'api_key': {
+                'configurada': bool(API_KEY),
+                'tamanho': len(API_KEY) if API_KEY else 0,
+                'preview': API_KEY[:25] + '...' if API_KEY and len(API_KEY) > 25 else 'NENHUMA',
+                'tem_0ikI': '0ikI' in API_KEY if API_KEY else False
+            },
+            'teste_completo': {}
+        }
+        
+        # Testar geração completa
+        try:
+            print("\n🧪 DEBUG: Testando geração completa...")
+            
+            # Prompt de teste
+            test_prompt = "A simple red square on white background"
+            
+            print(f"📝 Prompt: {test_prompt}")
+            
+            # Gerar
+            response = client.models.generate_content(
+                model='gemini-2.5-flash-image',
+                contents=[test_prompt],
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE"],
+                    temperature=0.9,
+                )
+            )
+            
+            print(f"✅ Response recebida")
+            
+            debug_info['teste_completo']['success'] = True
+            debug_info['teste_completo']['has_candidates'] = bool(response.candidates)
+            
+            if response.candidates:
+                debug_info['teste_completo']['num_candidates'] = len(response.candidates)
+                debug_info['teste_completo']['num_parts'] = len(response.candidates[0].content.parts)
+                
+                # Verificar se tem imagem
+                has_image = False
+                for part in response.candidates[0].content.parts:
+                    if hasattr(part, 'inline_data') and part.inline_data:
+                        debug_info['teste_completo']['image_size'] = len(part.inline_data.data)
+                        has_image = True
+                        break
+                
+                debug_info['teste_completo']['has_image'] = has_image
+            
+        except Exception as e:
+            debug_info['teste_completo']['success'] = False
+            debug_info['teste_completo']['error'] = str(e)
+            debug_info['teste_completo']['error_type'] = type(e).__name__
+        
+        return jsonify(debug_info)
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'erro': str(e)
+        }), 500
 
 @app.route('/health')
 def health():
