@@ -18,7 +18,8 @@ from prompts_6_imagens import get_prompts_config
 app = Flask(__name__)
 CORS(app)
 
-# Configurar API Key (CORRETA)
+# Configurar API Key - CORRETA (verificada 2025-02-14)
+# ATENÇÃO: Esta é a API Key CORRETA com "0ikI" (não "0lKl")
 API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyCU8tdR0ikIEu9qWZftd6LCPjk5jBn-iLQ")
 client = genai.Client(api_key=API_KEY)
 
