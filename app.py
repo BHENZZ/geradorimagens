@@ -173,14 +173,18 @@ def _gerar_imagem_internal():
             fonte_escolhida
         )
         
-        # Gerar as 6 imagens UMA POR VEZ (para não estourar memória)
+        # Gerar as 6 imagens em 2 LOTES DE 3 (para não estourar memória)
         imagens_urls = []
         
         print(f"\n{'='*60}")
-        print(f"🎨 INICIANDO GERAÇÃO DAS 6 IMAGENS")
+        print(f"🎨 INICIANDO GERAÇÃO DAS 6 IMAGENS EM 2 LOTES")
         print(f"{'='*60}")
         
-        for i, config in enumerate(prompts_config):
+        # LOTE 1: Imagens 1-3
+        lote1 = prompts_config[:3]
+        print(f"\n📦 LOTE 1: Gerando imagens 1-3...")
+        
+        for i, config in enumerate(lote1):
             try:
                 print(f"\n{'─'*60}")
                 print(f"⏳ IMAGEM {i+1}/6 - {config['tipo']}")
@@ -307,6 +311,145 @@ def _gerar_imagem_internal():
                 
                 # Continuar tentando as próximas imagens
                 continue
+        
+        # PAUSA E LIMPEZA ENTRE LOTES
+        print(f"\n{'='*60}")
+        print(f"🧹 LIMPEZA ENTRE LOTES - Liberando memória...")
+        print(f"{'='*60}")
+        import gc
+        gc.collect()
+        import time
+        time.sleep(3)  # Pausa de 3 segundos
+        print(f"✅ Memória liberada! Continuando...")
+        
+        # LOTE 2: Imagens 4-6
+        lote2 = prompts_config[3:]
+        print(f"\n📦 LOTE 2: Gerando imagens 4-6...")
+        
+        for i, config in enumerate(lote2, start=3):
+            try:
+                print(f"\n{'─'*60}")
+                print(f"⏳ IMAGEM {i+1}/6 - {config['tipo']}")
+                print(f"{'─'*60}")
+                
+                print(f"📝 Prompt (primeiros 150 chars):")
+                print(f"   {config['prompt'][:150]}...")
+                
+                print(f"\n🔧 Chamando API Gemini...")
+                print(f"   Modelo: gemini-2.5-flash-image")
+                print(f"   Temperature: 0.9")
+                
+                # Chamar API
+                try:
+                    response = client.models.generate_content(
+                        model='gemini-2.5-flash-image',
+                        contents=[config['prompt']],
+                        config=types.GenerateContentConfig(
+                            response_modalities=["IMAGE"],
+                            temperature=0.9,
+                        )
+                    )
+                    print(f"✅ API respondeu!")
+                    
+                except Exception as api_error:
+                    print(f"❌ ERRO NA CHAMADA DA API:")
+                    print(f"   Tipo: {type(api_error).__name__}")
+                    print(f"   Mensagem: {str(api_error)}")
+                    raise
+                
+                # Verificar resposta
+                if not response:
+                    print(f"⚠️ Response é None!")
+                    continue
+                    
+                print(f"📦 Response object: {type(response)}")
+                
+                if not hasattr(response, 'candidates'):
+                    print(f"⚠️ Response não tem atributo 'candidates'!")
+                    continue
+                    
+                if not response.candidates:
+                    print(f"⚠️ Response.candidates está vazio!")
+                    continue
+                
+                print(f"✅ Response tem {len(response.candidates)} candidate(s)")
+                
+                # Extrair imagem
+                print(f"\n🔍 Procurando imagem nos parts...")
+                image_data = None
+                
+                for part_idx, part in enumerate(response.candidates[0].content.parts):
+                    print(f"   Part {part_idx}: {type(part)}")
+                    
+                    if hasattr(part, 'inline_data'):
+                        if part.inline_data:
+                            image_data = part.inline_data.data
+                            print(f"   ✅ IMAGEM ENCONTRADA no part {part_idx}!")
+                            print(f"   📦 Tamanho: {len(image_data)} bytes")
+                            break
+                        else:
+                            print(f"   ⚠️ Part tem inline_data mas está None")
+                    else:
+                        print(f"   ⚠️ Part não tem inline_data")
+                
+                if not image_data:
+                    print(f"❌ Nenhuma imagem encontrada nos {len(response.candidates[0].content.parts)} parts")
+                    continue
+                
+                # Salvar imagem
+                filename = f"produto_{timestamp}_{i+1}_{config['tipo']}.png"
+                filepath = os.path.join(OUTPUT_FOLDER, filename)
+                
+                with open(filepath, 'wb') as f:
+                    f.write(image_data)
+                
+                print(f"💾 Salvo: {filename}")
+                
+                # Converter para base64
+                img_base64 = base64.b64encode(image_data).decode()
+                
+                imagens_urls.append({
+                    'url': f'/static/imagens_geradas/{filename}',
+                    'base64': f'data:image/png;base64,{img_base64}',
+                    'filename': filename,
+                    'tipo': config['tipo'],
+                    'descricao': config['descricao']
+                })
+                
+                print(f"✅ Imagem {i+1} ({config['tipo']}) concluída!")
+                
+                # IMPORTANTE: Limpar variáveis para liberar memória (com segurança)
+                try:
+                    del response
+                except: pass
+                try:
+                    del image_data
+                except: pass
+                try:
+                    del img_base64
+                except: pass
+                
+                # Force garbage collection
+                import gc
+                gc.collect()
+                
+                print(f"🧹 Memória liberada após imagem {i+1}")
+                
+            except Exception as img_error:
+                print(f"❌ Erro na imagem {i+1}: {str(img_error)}")
+                import traceback
+                traceback.print_exc()
+                
+                # Liberar memória mesmo em caso de erro (com segurança)
+                try:
+                    del response
+                except: pass
+                try:
+                    del image_data  
+                except: pass
+                
+                import gc
+                gc.collect()
         
         if not imagens_urls:
             raise Exception("Nenhuma imagem foi gerada com sucesso.")
